@@ -50,5 +50,10 @@ setup(name='fpdf',
             "Topic :: Multimedia :: Graphics",
       ],
       keywords=["pdf", "unicode", "png", "jpg", "ttf"],
-     )
+      entry_points={
+            'console_scripts': [
+                'pyfpdf_designer=tools:designer',
+            ],
+        },
+    )
 

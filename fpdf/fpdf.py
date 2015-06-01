@@ -793,6 +793,123 @@ class FPDF(object):
         else:
             self.x+=w
 
+    def multi_cellnoln(self, w, h, txt='', border=0, align='J', fill=0, split_only=False):
+        "Output text with automatic or explicit line breaks"
+        base_y = self.y
+        txt = self.normalize_text(txt)
+        ret = [] # if split_only = True, returns splited text cells
+        cw=self.current_font['cw']
+        if(w==0):
+            w=self.w-self.r_margin-self.x
+        wmax=(w-2*self.c_margin)*1000.0/self.font_size
+        s=txt.replace("\r",'')
+        nb=len(s)
+        if(nb>0 and s[nb-1]=="\n"):
+            nb-=1
+        b=0
+        if(border):
+            if(border==1):
+                border='LTRB'
+                b='LRT'
+                b2='LR'
+            else:
+                b2=''
+                if('L' in border):
+                    b2+='L'
+                if('R' in border):
+                    b2+='R'
+                if ('T' in border):
+                    b=b2+'T'
+                else:
+                    b=b2
+        sep=-1
+        i=0
+        j=0
+        l=0
+        ns=0
+        nl=1
+        while(i<nb):
+            #Get next character
+            c=s[i]
+            if(c=="\n"):
+                #Explicit line break
+                if(self.ws>0):
+                    self.ws=0
+                    if not split_only:
+                        self._out('0 Tw')
+                if not split_only:
+                    self.cell(w,h,substr(s,j,i-j),b,2,align,fill)
+                else:
+                    ret.append(substr(s,j,i-j))
+                i+=1
+                sep=-1
+                j=i
+                l=0
+                ns=0
+                nl+=1
+                if(border and nl==2):
+                    b=b2
+                continue
+            if(c==' '):
+                sep=i
+                ls=l
+                ns+=1
+            if self.unifontsubset:
+                l += self.get_string_width(c) / self.font_size*1000.0
+            else:
+                l += cw.get(c,0)
+            if(l>wmax):
+                #Automatic line break
+                if(sep==-1):
+                    if(i==j):
+                        i+=1
+                    if(self.ws>0):
+                        self.ws=0
+                        if not split_only:
+                            self._out('0 Tw')
+                    if not split_only:
+                        self.cell(w,h,substr(s,j,i-j),b,2,align,fill)
+                    else:
+                        ret.append(substr(s,j,i-j))
+                else:
+                    if(align=='J'):
+                        if ns>1:
+                            self.ws=(wmax-ls)/1000.0*self.font_size/(ns-1)
+                        else:
+                            self.ws=0
+                        if not split_only:
+                            self._out(sprintf('%.3f Tw',self.ws*self.k))
+                    if not split_only:
+                        self.cell(w,h,substr(s,j,sep-j),b,2,align,fill)
+                    else:
+                        ret.append(substr(s,j,sep-j))
+                    i=sep+1
+                sep=-1
+                j=i
+                l=0
+                ns=0
+                nl+=1
+                if(border and nl==2):
+                    b=b2
+            else:
+                i+=1
+            
+        #Last chunk
+        if(self.ws>0):
+            self.ws=0
+            if not split_only:
+                self._out('0 Tw')
+        if(border and 'B' in border):
+            b+='B'
+        if not split_only:
+            self.cell(w,h,substr(s,j,i-j),b,2,align,fill)
+            #self.x=self.l_margin
+            self.x+=w
+            self.y = base_y
+        else:
+            ret.append(substr(s,j,i-j))
+        return ret
+
     @check_page
     def multi_cell(self, w, h, txt='', border=0, align='J', fill=0, split_only=False):
         "Output text with automatic or explicit line breaks"

@@ -1212,6 +1212,9 @@ class FPDF(object):
                 dest='I'
             else:
                 dest='F'
+        # HTTP response body
+        if dest == 'B':
+            return bytes(self.buffer,'latin1')
         if PY3K:
             # manage binary data as latin1 until PEP461 or similar is implemented
             buffer = self.buffer.encode("latin1")
